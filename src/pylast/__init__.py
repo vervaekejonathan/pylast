@@ -929,6 +929,13 @@ class _Request:
             data.append("=".join((name, url_quote_plus(_string(self.params[name])))))
         data = "&".join(data)
 
+        if "api_sig" in self.params.keys():
+            method = "POST"
+            url_parameters = ""
+        else:
+            method = "GET"
+            url_parameters = "?" + data
+
         headers = {
             "Content-type": "application/x-www-form-urlencoded",
             "Accept-Charset": "utf-8",
@@ -946,8 +953,8 @@ class _Request:
 
             try:
                 conn.request(
-                    method="POST",
-                    url="https://" + host_name + host_subdir,
+                    method=method,
+                    url="https://" + host_name + host_subdir + url_parameters,
                     body=data,
                     headers=headers,
                 )
@@ -958,7 +965,12 @@ class _Request:
             conn = HTTPSConnection(context=SSL_CONTEXT, host=host_name)
 
             try:
-                conn.request(method="POST", url=host_subdir, body=data, headers=headers)
+                conn.request(
+                    method=method,
+                    url=host_subdir + url_parameters,
+                    body=data,
+                    headers=headers,
+                )
             except Exception as e:
                 raise NetworkError(self.network, e)
 
