@@ -547,7 +547,6 @@ class _Network:
         context=None,
         mbid=None,
     ):
-
         """Used to add a track-play to a user's profile.
 
         Parameters:
@@ -2128,16 +2127,17 @@ class Track(_Opus):
 
     def get_album(self):
         """Returns the album object of this track."""
+        if "album" not in self.info:
+            doc = self._request(self.ws_prefix + ".getInfo", True)
 
-        doc = self._request(self.ws_prefix + ".getInfo", True)
+            albums = doc.getElementsByTagName("album")
 
-        albums = doc.getElementsByTagName("album")
+            if len(albums) == 0:
+                return
 
-        if len(albums) == 0:
-            return
-
-        node = doc.getElementsByTagName("album")[0]
-        return Album(_extract(node, "artist"), _extract(node, "title"), self.network)
+            node = doc.getElementsByTagName("album")[0]
+            return Album(_extract(node, "artist"), _extract(node, "title"), self.network)
+        return Album(self.artist, self.info["album"], self.network)
 
     def love(self):
         """Adds the track to the user's loved tracks. """
@@ -2338,8 +2338,9 @@ class User(_BaseObject, _Chartable):
 
         artist = _extract(e, "artist")
         title = _extract(e, "name")
+        info = {"image": _extract_all(e, "image"), "album": _extract(e, 'album')}
 
-        return Track(artist, title, self.network, self.name)
+        return Track(artist, title, self.network, self.name, info=info)
 
     def get_recent_tracks(self, limit=10, cacheable=True, time_from=None, time_to=None):
         """
